@@ -41,8 +41,8 @@ func byteToString(c []byte) string {
 }
 
 func GetDataset(name string) *Dataset {
-    cmd := exec.Command("zfs", "list", "-r", "-t", "all", "-o", "name", "-d", "1", name)
-    rawoutput, err := cmd.Output()
+    cmd := exec.Command("/sbin/zfs", "list", "-H", "-r", "-t", "all", "-o", "name", "-d", "1", name)
+    rawoutput, err := cmd.CombinedOutput()
 
     if err != nil {
         panic(err)
@@ -52,16 +52,48 @@ func GetDataset(name string) *Dataset {
     dataset := new(Dataset)
     lines := strings.Split(byteToString(rawoutput), "\n")
     for i := range lines {
-        if lines[i] == name {
+        dataset_name := strings.Trim(lines[i], "\n")
+        if dataset_name == name {
             continue
         }
 
-        if strings.Contains(lines[i], "@") == false {
-            dataset.Children = append(dataset.Children, GetDataset(strings.Trim(lines[i], "\n")))
+        if len(dataset_name) == 0 {
+            continue
+        }
+
+        if strings.Contains(dataset_name, "@") == false {
+            dataset.Children = append(dataset.Children, GetDataset(dataset_name))
             continue
         }
 
         dataset.Snapshots = append(dataset.Snapshots, strings.Trim(lines[i], "\n"))
+    }
+
+    cmd = exec.Command("/sbin/zfs", "get", "-H", "-o", "property", "all", name)
+    rawoutput, err = cmd.Output()
+    if err != nil {
+        panic(err)
+        return nil
+    }
+
+    dataset.Options = make(map[string]string)
+
+    options := strings.Split(byteToString(rawoutput), "\n")
+    for i := range options {
+        option := strings.Trim(options[i], "\n")
+        cmd = exec.Command("/sbin/zfs", "get", "-H", "-o", "value", option, name)
+        rawoutput, err = cmd.Output()
+        if err != nil {
+            break
+        }
+
+        if len(option) == 0 {
+            continue
+        }
+
+        optval := strings.Trim(byteToString(rawoutput), "\n")
+
+        dataset.Options[option] = optval
     }
 
     return dataset
