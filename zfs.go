@@ -75,5 +75,5 @@ func GetDatasetPath(dataset string) (string, error) {
         return "", err
     }
 
-    return byteToString(output), nil
+    return strings.Trim(byteToString(output), "\n"), nil
 }
