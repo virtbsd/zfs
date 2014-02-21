@@ -100,6 +100,7 @@ func GetDataset(name string) *Dataset {
         dataset.Mountpoint = dataset.Options["mountpoint"]
     }
 
+    dataset.DatasetPath = name
     return dataset
 }
 
