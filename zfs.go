@@ -96,6 +96,10 @@ func GetDataset(name string) *Dataset {
         dataset.Options[option] = optval
     }
 
+    if _, ok := dataset.Options["mountpoint"]; ok && dataset.Options["mountpoint"][0] == '/' {
+        dataset.Mountpoint = dataset.Options["mountpoint"]
+    }
+
     return dataset
 }
 
